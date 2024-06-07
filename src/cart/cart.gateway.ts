@@ -1,8 +1,9 @@
 import {
-  WebSocketGateway,
-  SubscribeMessage,
   MessageBody,
+  SubscribeMessage,
+  WebSocketGateway,
 } from '@nestjs/websockets';
+
 import { CartService } from './cart.service';
 import { CartUpdateDto } from './dto/cart-update.dto';
 
