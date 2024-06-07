@@ -1,14 +1,34 @@
 import { Injectable } from '@nestjs/common';
+import { DbClient } from 'src/infra/db-client.service';
 
 import { CartUpdateDto } from './dto/cart-update.dto';
 
 @Injectable()
 export class CartService {
-  findAll() {
-    return `This action returns all cart`;
+  constructor(private dbClient: DbClient) {}
+
+  async get() {
+    return await this.dbClient.cartItem.findMany();
   }
 
-  update(cartUpdateDto: CartUpdateDto) {
-    return `This action updates cart: ${cartUpdateDto}`;
+  async update(cartUpdateDto: CartUpdateDto) {
+    cartUpdateDto.forEach(async (itemDto) => {
+      const updatedItem = await this.dbClient.cartItem.upsert({
+        where: { productId: itemDto.productId },
+        update: {
+          quantity: { increment: itemDto.quantity },
+        },
+        create: {
+          productId: itemDto.productId,
+          quantity: itemDto.quantity,
+        },
+      });
+
+      if (updatedItem.quantity <= 0) {
+        await this.dbClient.cartItem.delete({
+          where: { productId: itemDto.productId },
+        });
+      }
+    });
   }
 }

@@ -1,0 +1,6 @@
+services:
+  jwo-business-db:
+    environment:
+      - POSTGRES_USER=${DB_USER:-jwo-business-db}
+      - POSTGRES_PASSWORD=${DB_PASSWORD:-jwo-business-db}
+      - POSTGRES_DB=${DB_NAME:-jwo-business}

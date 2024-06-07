@@ -1,0 +1,15 @@
+services:
+  jwo-business-db:
+    container_name: jwo-business-db
+    image: postgres:16
+    ports:
+      - 5432:5432
+    env_file:
+      - path: .env
+        required: false
+    volumes:
+      - db-data:/var/lib/postgresql/data
+
+volumes:
+  db-data:
+    name: ${VOLUME_NAME:-jwo-business-db-data}
