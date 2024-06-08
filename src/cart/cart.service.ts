@@ -1,20 +1,31 @@
 import { Injectable } from '@nestjs/common';
+import { Prisma } from '@prisma/client';
 import { DbClient } from 'src/infra/db-client.service';
 
 import { CartUpdateDto } from './dto/cart-update.dto';
+import { Cart } from './entities/cart.entity';
 
 @Injectable()
 export class CartService {
   constructor(private dbClient: DbClient) {}
 
-  async get() {
-    return await this.dbClient.cartItem.findMany({
+  async get(): Promise<Cart> {
+    const items = await this.dbClient.cartItem.findMany({
+      include: {
+        product: true,
+      },
       orderBy: { productId: 'asc' },
     });
+
+    return items.map((i) => ({
+      ...i,
+      unitPrice: i.product.price,
+      linePrice: i.product.price.mul(new Prisma.Decimal(i.quantity)),
+    }));
   }
 
-  async update(cartUpdateDto: CartUpdateDto) {
-    cartUpdateDto.items.forEach(async (itemDto) => {
+  async update(cartUpdateDto: CartUpdateDto): Promise<Cart> {
+    const updatePromises = cartUpdateDto.items.map(async (itemDto) => {
       const updatedItem = await this.dbClient.cartItem.upsert({
         where: { productId: itemDto.productId },
         update: {
@@ -32,6 +43,7 @@ export class CartService {
         });
       }
     });
+    await Promise.all(updatePromises);
 
     return await this.get();
   }
