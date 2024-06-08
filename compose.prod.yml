@@ -1,0 +1,3 @@
+services:
+  jwo-business-service:
+    command: node dist/main
