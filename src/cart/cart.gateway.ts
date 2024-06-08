@@ -17,7 +17,6 @@ export class CartGateway {
 
   @SubscribeMessage('updateCart')
   update(@MessageBody() body: CartUpdateDto) {
-    console.log(body);
     return this.cartService.update(body);
   }
 }
