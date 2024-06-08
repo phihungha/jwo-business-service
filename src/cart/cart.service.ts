@@ -8,11 +8,13 @@ export class CartService {
   constructor(private dbClient: DbClient) {}
 
   async get() {
-    return await this.dbClient.cartItem.findMany();
+    return await this.dbClient.cartItem.findMany({
+      orderBy: { productId: 'asc' },
+    });
   }
 
   async update(cartUpdateDto: CartUpdateDto) {
-    cartUpdateDto.forEach(async (itemDto) => {
+    cartUpdateDto.items.forEach(async (itemDto) => {
       const updatedItem = await this.dbClient.cartItem.upsert({
         where: { productId: itemDto.productId },
         update: {
@@ -30,5 +32,7 @@ export class CartService {
         });
       }
     });
+
+    return await this.get();
   }
 }
