@@ -8,6 +8,7 @@
   "scripts": {
     "build": "nest build",
     "format": "prettier --write --ignore-unknown .",
+    "format-check": "prettier --check .",
     "lint-fix": "eslint --fix --cache .",
     "lint": "eslint .",
     "start": "nest start",
