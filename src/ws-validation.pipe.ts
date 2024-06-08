@@ -6,7 +6,7 @@ export class WsValidationPipe extends ValidationPipe {
   createExceptionFactory() {
     return (validationErrors = []) => {
       if (this.isDetailedOutputDisabled) {
-        return new WsException('Bad request');
+        return new WsException('Bad request.');
       }
 
       const errors = this.flattenValidationErrors(validationErrors);
