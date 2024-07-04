@@ -10,7 +10,7 @@ import { Server, Socket } from 'socket.io';
 import { WsValidationPipe } from 'src/ws-validation.pipe';
 
 import { CartService } from './cart.service';
-import { CartUpdateDto } from './dto/cart-update.dto';
+import { CartUpdateDto } from './dtos/cart-update.dto';
 
 @WebSocketGateway({ namespace: 'cart' })
 @UsePipes(new WsValidationPipe({ transform: true }))
