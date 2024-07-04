@@ -47,4 +47,9 @@ export class CartService {
 
     return await this.get();
   }
+
+  async clear(): Promise<Cart> {
+    await this.dbClient.cartItem.deleteMany();
+    return [];
+  }
 }
