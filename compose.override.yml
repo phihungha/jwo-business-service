@@ -2,15 +2,7 @@ services:
   jwo-business-service:
     ports:
       - 9229:9229
-    environment:
-      - DB_URL=postgresql://${DB_USER:-jwo-business-db}:${DB_PASSWORD:-jwo-business-db}@jwo-business-db:${DB_PORT:-5432}/${DB_NAME:-jwo-business}?schema=public
     volumes:
-      - .:/app
+      - ./:/app
       - /app/node_modules
     command: npm run start:debug
-
-  jwo-business-db:
-    environment:
-      - POSTGRES_USER=${DB_USER:-jwo-business-db}
-      - POSTGRES_PASSWORD=${DB_PASSWORD:-jwo-business-db}
-      - POSTGRES_DB=${DB_NAME:-jwo-business}
