@@ -12,7 +12,7 @@ import { WsValidationPipe } from 'src/ws-validation.pipe';
 import { CartService } from './cart.service';
 import { CartUpdateDto } from './dtos/cart-update.dto';
 
-@WebSocketGateway({ namespace: 'cart' })
+@WebSocketGateway({ namespace: 'cart', cors: true })
 @UsePipes(new WsValidationPipe({ transform: true }))
 export class CartGateway {
   @WebSocketServer()
