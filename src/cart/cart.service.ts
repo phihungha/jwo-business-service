@@ -2,7 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
 import { DbClient } from 'src/infra/db-client.service';
 
-import { CartUpdateDto } from './dto/cart-update.dto';
+import { CartUpdateDto } from './dtos/cart-update.dto';
 import { Cart } from './entities/cart.entity';
 
 @Injectable()
@@ -46,5 +46,10 @@ export class CartService {
     await Promise.all(updatePromises);
 
     return await this.get();
+  }
+
+  async clear(): Promise<Cart> {
+    await this.dbClient.cartItem.deleteMany();
+    return [];
   }
 }
