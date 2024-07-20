@@ -1,20 +1,24 @@
 services:
-  jwo-business-service:
+  business-service:
     container_name: jwo-business-service
-    image: haphihung55/jwo-business-service:latest
+    image: haphihung55/jwo-business-service:0.1.0
     build: .
     ports:
-      - ${SERVICE_PORT}:5000
+      - ${SERVICE_PORT}:${SERVICE_PORT}
     environment:
-      - DB_URL=postgresql://${DB_USER}:${DB_PASSWORD}@jwo-business-db:${DB_PORT}/${DB_NAME}?schema=public
+      - DB_URL=postgresql://${DB_USER}:${DB_PASSWORD}@jwo-db:5432/${DB_NAME}?schema=public
+      - KAFKA_BROKER_HOST=jwo-kafka:19092
+    env_file:
+      - .env
     depends_on:
-      - jwo-business-db
+      - db
+      - init-kafka
 
-  jwo-business-db:
-    container_name: jwo-business-db
+  db:
+    container_name: jwo-db
     image: postgres:16
     ports:
-      - ${DB_PORT}:5432
+      - 5432:5432
     environment:
       - PGPORT=5432
       - POSTGRES_USER=${DB_USER}
@@ -23,6 +27,42 @@ services:
     volumes:
       - db-data:/var/lib/postgresql/data
 
+  kafka:
+    container_name: jwo-kafka
+    image: apache/kafka:3.7.1
+    ports:
+      - 9092:9092
+    expose:
+      - 19092
+    environment:
+      KAFKA_NODE_ID: 1
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: 'CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT'
+      KAFKA_ADVERTISED_LISTENERS: 'PLAINTEXT_HOST://localhost:9092,PLAINTEXT://jwo-kafka:19092'
+      KAFKA_PROCESS_ROLES: 'broker,controller'
+      KAFKA_CONTROLLER_QUORUM_VOTERS: '1@jwo-kafka:29093'
+      KAFKA_LISTENERS: 'CONTROLLER://:29093,PLAINTEXT_HOST://:9092,PLAINTEXT://:19092'
+      KAFKA_INTER_BROKER_LISTENER_NAME: 'PLAINTEXT'
+      KAFKA_CONTROLLER_LISTENER_NAMES: 'CONTROLLER'
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+
+  init-kafka:
+    container_name: jwo-init-kafka
+    image: apache/kafka:3.7.1
+    depends_on:
+      - kafka
+    entrypoint: ['/bin/sh', '-c']
+    command: |
+      "
+      # blocks until kafka is reachable
+      kafka-topics --bootstrap-server jwo-kafka:19092 --list
+
+      echo -e 'Creating kafka topics'
+      kafka-topics --bootstrap-server jwo-kafka:19092 --create --if-not-exists --topic cart-updates
+
+      echo -e 'Successfully created the following topics:'
+      kafka-topics --bootstrap-server jwo-kafka:19092 --list
+      "
+
 volumes:
   db-data:
-    name: ${VOLUME_NAME:-jwo-business-db-data}
+    name: ${VOLUME_NAME:-jwo-db-data}

@@ -1,9 +1,13 @@
-import { Module } from '@nestjs/common';
+import { Global, Module } from '@nestjs/common';
+import { ConfigModule } from '@nestjs/config';
 
 import { CartModule } from './cart/cart.module';
-import { InfraModule } from './infra/infra.module';
+import { DbClient } from './infra/db-client.service';
 
+@Global()
 @Module({
-  imports: [InfraModule, CartModule],
+  providers: [DbClient],
+  imports: [ConfigModule.forRoot({ isGlobal: true }), CartModule],
+  exports: [DbClient],
 })
 export class AppModule {}

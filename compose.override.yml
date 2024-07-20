@@ -1,5 +1,5 @@
 services:
-  jwo-business-service:
+  business-service:
     ports:
       - 9229:9229
     volumes:
