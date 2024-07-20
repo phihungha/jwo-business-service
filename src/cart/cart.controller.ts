@@ -1,10 +1,12 @@
-import { Controller } from '@nestjs/common';
+import { Controller, UsePipes } from '@nestjs/common';
 import { EventPattern, Payload } from '@nestjs/microservices';
+import { RpcValidationPipe } from 'src/validation.pipe';
 
 import { CartGateway } from './cart.gateway';
 import { CartService } from './cart.service';
 import { CartUpdateDto } from './dtos/cart-update.dto';
 
+@UsePipes(new RpcValidationPipe({ transform: true }))
 @Controller()
 export class CartController {
   constructor(
