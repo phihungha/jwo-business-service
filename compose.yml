@@ -5,64 +5,78 @@ services:
     build: .
     ports:
       - ${SERVICE_PORT}:${SERVICE_PORT}
-    environment:
-      - DB_URL=postgresql://${DB_USER}:${DB_PASSWORD}@jwo-db:5432/${DB_NAME}?schema=public
-      - KAFKA_BROKER_HOST=jwo-kafka:19092
-    env_file:
-      - .env
+    networks:
+      - jwo
     depends_on:
       - db
       - init-kafka
+    env_file:
+      - .env
+    environment:
+      - DB_URL=postgresql://${DB_USER}:${DB_PASSWORD}@jwo-db:5432/${DB_NAME}?schema=public
+      - KAFKA_BROKER_HOST=jwo-kafka:9092
 
   db:
     container_name: jwo-db
     image: postgres:16
     ports:
       - 5432:5432
+    volumes:
+      - db-data:/var/lib/postgresql/data
+    networks:
+      - jwo
     environment:
       - PGPORT=5432
       - POSTGRES_USER=${DB_USER}
       - POSTGRES_PASSWORD=${DB_PASSWORD}
       - POSTGRES_DB=${DB_NAME}
-    volumes:
-      - db-data:/var/lib/postgresql/data
 
   kafka:
     container_name: jwo-kafka
-    image: apache/kafka:3.7.1
+    image: bitnami/kafka:3.7.1
     ports:
       - 9092:9092
-    expose:
-      - 19092
+      - 9094:9094
+    volumes:
+      - kafka-data:/bitnami/kafka
+    networks:
+      - jwo
     environment:
-      KAFKA_NODE_ID: 1
-      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: 'CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT'
-      KAFKA_ADVERTISED_LISTENERS: 'PLAINTEXT_HOST://localhost:9092,PLAINTEXT://jwo-kafka:19092'
-      KAFKA_PROCESS_ROLES: 'broker,controller'
-      KAFKA_CONTROLLER_QUORUM_VOTERS: '1@jwo-kafka:29093'
-      KAFKA_LISTENERS: 'CONTROLLER://:29093,PLAINTEXT_HOST://:9092,PLAINTEXT://:19092'
-      KAFKA_INTER_BROKER_LISTENER_NAME: 'PLAINTEXT'
-      KAFKA_CONTROLLER_LISTENER_NAMES: 'CONTROLLER'
-      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      - KAFKA_CFG_NODE_ID=0
+      - KAFKA_CFG_PROCESS_ROLES=controller,broker
+      - KAFKA_CFG_CONTROLLER_QUORUM_VOTERS=0@jwo-kafka:9093
+      - KAFKA_CFG_LISTENERS=PLAINTEXT://:9092,CONTROLLER://:9093,EXTERNAL://:9094
+      - KAFKA_CFG_ADVERTISED_LISTENERS=PLAINTEXT://jwo-kafka:9092,EXTERNAL://localhost:9094
+      - KAFKA_CFG_LISTENER_SECURITY_PROTOCOL_MAP=CONTROLLER:PLAINTEXT,EXTERNAL:PLAINTEXT,PLAINTEXT:PLAINTEXT
+      - KAFKA_CFG_CONTROLLER_LISTENER_NAMES=CONTROLLER
+      - KAFKA_CFG_OFFSETS_TOPIC_REPLICATION_FACTOR=1
 
   init-kafka:
     container_name: jwo-init-kafka
-    image: apache/kafka:3.7.1
+    image: bitnami/kafka:3.7.1
+    networks:
+      - jwo
     depends_on:
       - kafka
-    entrypoint: ['/bin/sh', '-c']
+    entrypoint: ['/bin/sh', '-c', '-e']
     command: |
       "
       # blocks until kafka is reachable
-      kafka-topics --bootstrap-server jwo-kafka:19092 --list
+      kafka-topics.sh --bootstrap-server jwo-kafka:9092 --list
 
       echo -e 'Creating kafka topics'
-      kafka-topics --bootstrap-server jwo-kafka:19092 --create --if-not-exists --topic cart-updates
+      kafka-topics.sh --bootstrap-server jwo-kafka:9092 --create --if-not-exists --topic cart-updates
 
       echo -e 'Successfully created the following topics:'
-      kafka-topics --bootstrap-server jwo-kafka:19092 --list
+      kafka-topics.sh --bootstrap-server jwo-kafka:9092 --list
       "
 
 volumes:
   db-data:
-    name: ${VOLUME_NAME:-jwo-db-data}
+    name: jwo-db-data
+  kafka-data:
+    name: jwo-kafka-data
+
+networks:
+  jwo:
+    driver: bridge
