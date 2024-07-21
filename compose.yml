@@ -17,8 +17,8 @@ services:
       - KAFKA_BROKER_HOST=jwo-kafka:9092
       - KAFKA_CLIENT_ID=${KAFKA_CLIENT_ID:-business-service}
       - KAFKA_CONSUMER_GROUP_ID=${KAFKA_CONSUMER_GROUP_ID:-business-service}
-      - KAFKA_CONN_TIMEOUT=${KAFKA_CONN_TIMEOUT:-5000}
-      - KAFKA_MAX_RETRY=${KAFKA_MAX_RETRY:-5}
+      - KAFKA_CONN_TIMEOUT=${KAFKA_CONN_TIMEOUT:-10000}
+      - KAFKA_MAX_RETRY=${KAFKA_MAX_RETRY:-10}
 
   db:
     container_name: jwo-db
