@@ -16,6 +16,13 @@ async function bootstrap() {
         brokers: [
           configService.get<string>('KAFKA_BROKER_HOST', 'localhost:9092'),
         ],
+        connectionTimeout: configService.get<number>(
+          'KAFKA_CONN_TIMEOUT',
+          5000,
+        ),
+        retry: {
+          retries: configService.get<number>('KAFKA_MAX_RETRY', 5),
+        },
       },
       consumer: {
         groupId: configService.get<string>(

@@ -7,7 +7,7 @@ import {
   WebSocketServer,
 } from '@nestjs/websockets';
 import { Server, Socket } from 'socket.io';
-import { WsValidationPipe } from 'src/validation.pipe';
+import { WsValidationPipe } from 'src/infra/validation.pipe';
 
 import { CartService } from './cart.service';
 import { CartUpdateDto } from './dtos/cart-update.dto';

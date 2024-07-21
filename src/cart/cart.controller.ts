@@ -1,6 +1,6 @@
 import { Controller, UsePipes } from '@nestjs/common';
 import { EventPattern, Payload } from '@nestjs/microservices';
-import { RpcValidationPipe } from 'src/validation.pipe';
+import { RpcValidationPipe } from 'src/infra/validation.pipe';
 
 import { CartGateway } from './cart.gateway';
 import { CartService } from './cart.service';
