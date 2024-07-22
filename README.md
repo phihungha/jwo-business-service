@@ -1,4 +1,4 @@
-# Business service service for JWO Shopping System
+# Business service for JWO Shopping System
 
 Business backend service for the Just-Walk-Out Shopping System.
 
@@ -16,4 +16,5 @@ Service auto-restarts on code changes. Use `Remote debug` config in debugger to 
 
 - NestJS
 - SocketIO
+- Apache Kafka
 - Prisma

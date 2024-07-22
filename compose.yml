@@ -1,28 +1,86 @@
 services:
-  jwo-business-service:
+  business-service:
     container_name: jwo-business-service
-    image: haphihung55/jwo-business-service:latest
+    image: haphihung55/jwo-business-service:0.1.0
     build: .
     ports:
-      - ${SERVICE_PORT}:5000
-    environment:
-      - DB_URL=postgresql://${DB_USER}:${DB_PASSWORD}@jwo-business-db:${DB_PORT}/${DB_NAME}?schema=public
+      - ${SERVICE_PORT:-5000}:${SERVICE_PORT:-5000}
+    networks:
+      - jwo
     depends_on:
-      - jwo-business-db
+      - db
+      - init-kafka
+    env_file:
+      - .env
+    environment:
+      - DB_URL=postgresql://${DB_USER:-business-service}:${DB_PASSWORD:-business-service}@jwo-db:5432/${DB_NAME:-business}?schema=public
+      - KAFKA_BROKER_HOST=jwo-kafka:9092
+      - KAFKA_CLIENT_ID=${KAFKA_CLIENT_ID:-business-service}
+      - KAFKA_CONSUMER_GROUP_ID=${KAFKA_CONSUMER_GROUP_ID:-business-service}
+      - KAFKA_CONN_TIMEOUT=${KAFKA_CONN_TIMEOUT:-10000}
+      - KAFKA_MAX_RETRY=${KAFKA_MAX_RETRY:-10}
 
-  jwo-business-db:
-    container_name: jwo-business-db
+  db:
+    container_name: jwo-db
     image: postgres:16
     ports:
-      - ${DB_PORT}:5432
-    environment:
-      - PGPORT=5432
-      - POSTGRES_USER=${DB_USER}
-      - POSTGRES_PASSWORD=${DB_PASSWORD}
-      - POSTGRES_DB=${DB_NAME}
+      - 5432:5432
     volumes:
       - db-data:/var/lib/postgresql/data
+    networks:
+      - jwo
+    environment:
+      - PGPORT=5432
+      - POSTGRES_USER=${DB_USER:-business-service}
+      - POSTGRES_PASSWORD=${DB_PASSWORD:-business-service}
+      - POSTGRES_DB=${DB_NAME:-business}
+
+  kafka:
+    container_name: jwo-kafka
+    image: bitnami/kafka:3.7.1
+    ports:
+      - 9092:9092
+      - 9094:9094
+    volumes:
+      - kafka-data:/bitnami/kafka
+    networks:
+      - jwo
+    environment:
+      - KAFKA_CFG_NODE_ID=0
+      - KAFKA_CFG_PROCESS_ROLES=controller,broker
+      - KAFKA_CFG_CONTROLLER_QUORUM_VOTERS=0@jwo-kafka:9093
+      - KAFKA_CFG_LISTENERS=PLAINTEXT://:9092,CONTROLLER://:9093,EXTERNAL://:9094
+      - KAFKA_CFG_ADVERTISED_LISTENERS=PLAINTEXT://jwo-kafka:9092,EXTERNAL://localhost:9094
+      - KAFKA_CFG_LISTENER_SECURITY_PROTOCOL_MAP=CONTROLLER:PLAINTEXT,EXTERNAL:PLAINTEXT,PLAINTEXT:PLAINTEXT
+      - KAFKA_CFG_CONTROLLER_LISTENER_NAMES=CONTROLLER
+      - KAFKA_CFG_OFFSETS_TOPIC_REPLICATION_FACTOR=1
+
+  init-kafka:
+    container_name: jwo-init-kafka
+    image: bitnami/kafka:3.7.1
+    networks:
+      - jwo
+    depends_on:
+      - kafka
+    entrypoint: ['/bin/sh', '-c', '-e']
+    command: |
+      "
+      # blocks until kafka is reachable
+      kafka-topics.sh --bootstrap-server jwo-kafka:9092 --list
+
+      echo -e 'Creating kafka topics'
+      kafka-topics.sh --bootstrap-server jwo-kafka:9092 --create --if-not-exists --topic cart-updates
+
+      echo -e 'Successfully created the following topics:'
+      kafka-topics.sh --bootstrap-server jwo-kafka:9092 --list
+      "
 
 volumes:
   db-data:
-    name: ${VOLUME_NAME:-jwo-business-db-data}
+    name: jwo-db-data
+  kafka-data:
+    name: jwo-kafka-data
+
+networks:
+  jwo:
+    driver: bridge

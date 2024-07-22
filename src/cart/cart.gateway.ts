@@ -7,10 +7,11 @@ import {
   WebSocketServer,
 } from '@nestjs/websockets';
 import { Server, Socket } from 'socket.io';
-import { WsValidationPipe } from 'src/ws-validation.pipe';
+import { WsValidationPipe } from 'src/infra/validation.pipe';
 
 import { CartService } from './cart.service';
 import { CartUpdateDto } from './dtos/cart-update.dto';
+import { Cart } from './entities/cart.entity';
 
 @WebSocketGateway({ namespace: 'cart', cors: true })
 @UsePipes(new WsValidationPipe({ transform: true }))
@@ -21,7 +22,7 @@ export class CartGateway {
   constructor(private readonly cartService: CartService) {}
 
   @SubscribeMessage('get')
-  async get(@ConnectedSocket() socket: Socket) {
+  async get(@ConnectedSocket() socket: Socket): Promise<string> {
     socket.join('get');
     const cart = await this.cartService.get();
     socket.emit('updated', cart);
@@ -31,12 +32,16 @@ export class CartGateway {
   @SubscribeMessage('update')
   async update(@MessageBody() body: CartUpdateDto) {
     const cart = await this.cartService.update(body);
-    this.server.to('get').emit('updated', cart);
+    await this.emitCartToAll(cart);
     return 'Succeed';
   }
 
+  async emitCartToAll(cart: Cart): Promise<void> {
+    this.server.to('get').emit('updated', cart);
+  }
+
   @SubscribeMessage('clear')
-  async clear() {
+  async clear(): Promise<string> {
     const cart = await this.cartService.clear();
     this.server.to('get').emit('updated', cart);
     return 'Succeed';
