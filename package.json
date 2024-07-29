@@ -1,6 +1,6 @@
 {
   "name": "jwo-business-service",
-  "version": "0.0.1",
+  "version": "0.1.0",
   "description": "Business service backend for Just-Walk-Out Shopping System",
   "author": "Ha Phi Hung",
   "private": true,
